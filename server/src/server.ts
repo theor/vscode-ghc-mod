@@ -116,8 +116,14 @@ function getInfoOrTypeTooltip(document: ITextDocument, position: Position): Prom
 
 function ghcCheck(document: ITextDocument): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-        ghcMod.doCheck(document).then((diagnostics) => {
-            connection.sendDiagnostics({ uri: document.uri, diagnostics: diagnostics.slice(0, maxNumberOfProblems) });
+        ghcMod.doCheck(document).then((diagnosticsResults) => {
+            diagnosticsResults.forEach((result) => {
+                connection.console.log(`Filepath: ${result.filepath}\nURI: ${filepathToUri(result.filepath, workspaceRoot)}`);
+                connection.sendDiagnostics({
+                    uri: filepathToUri(result.filepath, workspaceRoot),
+                    diagnostics: result.diagnostics.slice(0, maxNumberOfProblems)
+                });
+            });
             resolve();
         }, (err) => {
             reject(new Error(err));
@@ -125,14 +131,23 @@ function ghcCheck(document: ITextDocument): Promise<void> {
     });
 }
 
-// Unused for now, but this might need changed when
-// using the more advanced ghc-mod options
-// function getNormalizedUri(uri: string): string {
-//     return uri.replace('file:///', '').replace('%3A', ':');
-// }
+// On Windows:
+// document.uri - file:///root/path/file/path
+// workspaceRoot - root\path
+// ghc-mod results (main file) - root\path\file\path
+// ghc-mod results (referenced file) - file\path
+function filepathToUri(path: string, root: string = ''): string {
+    if (path.indexOf(root) === -1) {
+        path = `${root}/${path}`;
+    }
+    return `file:///${path.replace(/\\/g, '/')}`;
+}
 
 /*
 // Currently unused language-server features
+
+// Reports error messages to the UI
+// let errorTracker = new server.ErrorMessageTracker();
 
 // This handler provides the initial list of the completion items.
 connection.onCompletion((textDocumentPosition: TextDocumentIdentifier): CompletionItem[] => {

@@ -133,7 +133,7 @@ export class GhcModProcess {
             // 1. Allow this to be configurable.
             // 2. Present this information to user -- but how?
             // https://github.com/hoovercj/vscode-ghc-mod/issues/5
-            this.logger.log('Error: ' + data.toString());
+            // this.logger.log('Error: ' + data.toString());
         });
         this.childProcess.stdout.setEncoding('utf-8');
         return this.childProcess;

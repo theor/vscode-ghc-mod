@@ -6,8 +6,14 @@
 
 import {GhcModOpts, GhcModProcess} from './ghcModProcess';
 import {
-RemoteConsole, ITextDocument, Diagnostic, DiagnosticSeverity, Range, Position
+    RemoteConsole, ITextDocument, Diagnostic,
+    DiagnosticSeverity, Range, Position, Files
 } from 'vscode-languageserver';
+
+export interface DiagnosticsResults {
+    filepath: string;
+    diagnostics: Diagnostic[];
+}
 
 export class GhcMod {
     private ghcModProcess: GhcModProcess;
@@ -19,12 +25,11 @@ export class GhcMod {
     }
 
     // GHC-MOD COMMANDS
-    public doCheck(document): Promise<Diagnostic[]> {
-        this.logger.log('Do Check: ' + document.uri);
+    public doCheck(document): Promise<DiagnosticsResults[]> {
         return this.ghcModProcess.runGhcModCommand(<GhcModOpts>{
             command: 'check',
             text: document.getText(),
-            uri: document.uri
+            uri: Files.uriToFilePath(document.uri)
         }).then((lines) => {
             return this.getCheckDiagnostics(lines);
         });
@@ -34,7 +39,7 @@ export class GhcMod {
         return this.ghcModProcess.runGhcModCommand(<GhcModOpts>{
             command: 'type',
             text: document.getText(),
-            uri: document.uri,
+            uri: Files.uriToFilePath(document.uri),
             args: [(position.line + 1).toString(), (position.character + 1).toString()]
         }).then((lines) => {
             return lines.reduce((acc, line) => {
@@ -51,7 +56,6 @@ export class GhcMod {
                 } catch (error) {
                     return acc;
                 }
-
                 let cursorLine = position.line;
                 let cursorCharacter = position.character;
                 if (cursorLine < typeRange.start.line || cursorLine > typeRange.end.line ||
@@ -67,7 +71,7 @@ export class GhcMod {
         return this.ghcModProcess.runGhcModCommand(<GhcModOpts>{
             command: 'info',
             text: document.getText(),
-            uri: document.uri,
+            uri: Files.uriToFilePath(document.uri),
             args: [this.getWordAtPosition(document, position)]
         }).then((lines) => {
             let tooltip = lines.join('\n');
@@ -84,13 +88,16 @@ export class GhcMod {
     }
 
     // PRIVATE METHODS    
-    private getCheckDiagnostics(lines: string[]): Diagnostic[] {
-        let diagnostics: Diagnostic[] = [];
+    private getCheckDiagnostics(lines: string[]): DiagnosticsResults[] {
+        let results: { [key: string]: Diagnostic[] } = Object.create(null);
         lines.forEach((line) => {
             let match = line.match(/^(.*?):([0-9]+):([0-9]+): *(?:(Warning|Error): *)?/);
             if (match) {
-                this.logger.log('Diagnostic in:' + match[1]);
-                diagnostics.push({
+                let filename = match[1] || '';
+                if (!results[filename]) {
+                    results[filename] = [];
+                }
+                results[filename].push({
                     severity: match[4] === 'Warning' ? DiagnosticSeverity.Warning : DiagnosticSeverity.Error,
                     range: {
                         start: { line: parseInt(match[2], 10) - 1, character: parseInt(match[3], 10) - 1 },
@@ -100,7 +107,12 @@ export class GhcMod {
                 });
             }
         });
-        return diagnostics;
+        return Object.keys(results).map((key) => {
+           return <DiagnosticsResults> {
+               filepath: key,
+               diagnostics: results[key]
+           };
+        });
     }
 
     private getWordAtPosition(document: ITextDocument, position: Position): string {
