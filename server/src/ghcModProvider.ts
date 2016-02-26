@@ -57,7 +57,7 @@ export class GhcModProvider implements IGhcModProvider
 
     public getInfo(text: string, uri: string, position: Position): Promise<string> {
         let word = DocumentUtils.getWordAtPosition(text, position);
-        if(word != "") {
+        if (word) {
             return this.ghcMod.runGhcModCommand(<GhcModCmdOpts>{
                 command: 'info',
                 text: text,
@@ -72,11 +72,8 @@ export class GhcModProvider implements IGhcModProvider
                 }
             });
         } else {
-            return new Promise((resolve, reject) => {
-                resolve('');
-            });
-        }
-                
+            return Promise.resolve('');
+        }         
     }
 
     public shutdown(): void {
