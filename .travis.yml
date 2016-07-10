@@ -2,10 +2,11 @@ language: node_js
 node_js:
   - "6"
 before_install:
-  - npm install client
-  - npm install server
-script:
-  - npm build client
-  - npm build server
+#   - npm install client
   - cd server
+  - npm install
+script:
+#   - npm build client
+  - cd server
+  - npm build
   - npm test
