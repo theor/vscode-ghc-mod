@@ -5,10 +5,11 @@ before_install:
 #   - npm install client
   - pwd
   - ls
-  - cd server
+install:
+  - cd client && npm install && cd ..
+  - cd server && npm install && cd ..
 script:
-#   - npm build client
+  - cd client && npm build && cd ..
   - cd server
-  - npm build
   - find .
   - npm test
