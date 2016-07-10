@@ -3,6 +3,8 @@ node_js:
   - "6"
 before_install:
 #   - npm install client
+  - pwd
+  - ls
   - cd server
   - npm install
 script:
