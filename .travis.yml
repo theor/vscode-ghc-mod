@@ -9,7 +9,7 @@ install:
   - cd client && npm install && cd ..
   - cd server && npm install && cd ..
 script:
-  - cd client && npm build && cd ..
+#   - cd client && npm build && cd ..
   - cd server
   - find .
   - npm test
