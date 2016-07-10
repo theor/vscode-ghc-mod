@@ -11,5 +11,5 @@ install:
 script:
 #   - cd client && npm build && cd ..
   - cd server
-  - find .
+  - find ..
   - npm test
