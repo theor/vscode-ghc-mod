@@ -6,9 +6,9 @@ before_install:
   - pwd
   - ls
   - cd server
-  - npm install
 script:
 #   - npm build client
   - cd server
   - npm build
+  - find .
   - npm test
